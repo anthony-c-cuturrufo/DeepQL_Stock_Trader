@@ -13,7 +13,7 @@ class TradingEnv():
     def get_reward(self, selling_price, time_sold, bought_price, time_bought):
         delta_t = time_sold - time_bought
         profit = selling_price - bought_price
-        reward = max(profit, .0001) // (np.log(delta_t) + 1)
+        reward = max(profit, .0001) // (np.exp(delta_t) + 1)
         return reward
         
     # returns an an n-day state representation ending at time t
