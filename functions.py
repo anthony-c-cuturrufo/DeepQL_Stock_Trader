@@ -1,5 +1,7 @@
 import numpy as np
 import math
+import pandas as pd
+from ta import trend
 
 # prints formatted price
 def formatPrice(n):
@@ -16,6 +18,13 @@ def getStockDataVec(key):
             vec.append(float(line.split(",")[4]))
 
     return vec
+
+# returns Simple Moving Average from closing prices
+def getSMAFromVec(v, window_size):
+    df = pd.DataFrame.from_dict({'close': v})
+    sma = trend.SMAIndicator(df['close'], window_size, True)
+    return sma.sma_indicator().values
+
 
 # returns the sigmoid
 def sigmoid(x):

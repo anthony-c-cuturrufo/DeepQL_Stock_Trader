@@ -5,6 +5,7 @@ class TradingEnv():
     def __init__(self, train_data, window_size):
         #list of all closing values from beg - end
         self.data = train_data
+        self.sma_data = getSMAFromVec(train_data, window_size)
         #size of recent closing price list
         self.window_size = window_size
         #keeps track of buying prices 
@@ -13,10 +14,13 @@ class TradingEnv():
     def get_reward(self, selling_price, time_sold, bought_price, time_bought):
         delta_t = time_sold - time_bought
         profit = selling_price - bought_price
-        reward = max(profit, .0001) // (np.exp(delta_t) + 1)
+        reward = max(profit, .0001) // (np.log(delta_t) + 1)
         return reward
+    
+    def get_weighted_diff(self, v1, v2):
+        return (abs(v2 - v1)) / v1
         
-    # returns an an n-day state representation ending at time t
+    # returns an an n-day state representation ending at time t with sma indicator at end
     def get_state(self, t):
         n = self.window_size + 1
         d = t - n + 1
@@ -25,7 +29,10 @@ class TradingEnv():
         for i in range(n - 1):
             res.append(sigmoid(block[i + 1] - block[i]))
 
-        return np.array([res])
+        # add sigmoid of price and sma
+        res.append(sigmoid(self.get_weighted_diff(self.data[t], self.sma_data[t])))
+        res = np.array([res])
+        return res
     
     def buy(self, t):
         # keeps track of the price bought and time bought

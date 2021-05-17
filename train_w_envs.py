@@ -12,8 +12,8 @@ if len(sys.argv) != 4:
     exit()
 
 stock_name, window_size, episode_count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
-
-agent = Agent(window_size)
+num_tech_indicators = 1
+agent = Agent(window_size + num_tech_indicators)
 data = getStockDataVec(stock_name)
 env = TradingEnv(data, window_size)
 l = len(data) - 1

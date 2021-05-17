@@ -16,7 +16,7 @@ class Agent:
 		self.state_size = state_size # normalized previous days
 		self.action_size = 3 # sit, buy, sell
 		self.memory = ReplayMemory(10000)
-		self.inventory = []
+		#self.inventory = []
 		self.is_eval = is_eval
 
 		self.gamma = 0.95
