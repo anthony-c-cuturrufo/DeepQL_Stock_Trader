@@ -4,43 +4,66 @@ from agent.model import DQN
 import numpy as np
 import random
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import os
 
+# Redirect pytorch processing power
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Agent:
+	'''
+	Represents the Agent that plays the reinforcement learning game
+	'''
 	def __init__(self, state_size, is_eval=False):
-		self.state_size = state_size # normalized previous days
-		self.action_size = 3 # sit, buy, sell
-		self.memory = ReplayMemory(10000)
+		"""
+		Constructs new Agent object
+		:param state_size: size of the state being used
+		:param is_eval: flag for whether or not we are training (i.e. update parameters) or evaluating
+		"""
+		# Represents the size of each state
+		self.state_size = state_size
+		# Represents size of the action space
+		self.action_size = 3 # 3 options of actions: hold, buy, sell
+		self.memory = ReplayMemory(10000) # Constructs a new memory object
 		#self.inventory = []
 		self.is_eval = is_eval
 
-		self.gamma = 0.95
+		# RL parameters: kept the same from original product
+		self.gamma = 0.95 # gamma coefficient from Belman equation
+		# Epsilon will keep being changed at each iteration
 		self.epsilon = 1.0
-		self.epsilon_min = 0.01
-		self.epsilon_decay = 0.995
+		self.epsilon_min = 0.01 # minimum value epsilon can take
+		self.epsilon_decay = 0.995 # amount epsilon decays each iteration
 		self.batch_size = 32
+
+		# Loads previous models, if they exist
 		if os.path.exists('models/target_model'):
 			self.policy_net = torch.load('models/policy_model', map_location=device)
 			self.target_net = torch.load('models/target_model', map_location=device)
 		else:
 			self.policy_net = DQN(state_size, self.action_size)
 			self.target_net = DQN(state_size, self.action_size)
+		# Optimization function
 		self.optimizer = optim.RMSprop(self.policy_net.parameters(), lr=0.005, momentum=0.9)
 
 	def act(self, state):
+		"""
+		Acts on the current state
+		"""
 		if not self.is_eval and np.random.rand() <= self.epsilon:
+			# Then we are not evaulating, and we are in exploratory phase, so we try something new
 			return random.randrange(self.action_size)
-
+		# Otherwise, we convert the state to a tensor, and run it through our target network to determine
+		# action of highest probability, which we return.
 		tensor = torch.FloatTensor(state).to(device)
 		options = self.target_net(tensor)
 		return np.argmax(options[0].detach().numpy())
 
 	def optimize(self):
+		'''
+		Optimizes the policy and target nets
+		'''
 		if len(self.memory) < self.batch_size:
 				return
 		transitions = self.memory.sample(self.batch_size)
@@ -52,12 +75,13 @@ class Agent:
 		# Compute a mask of non-final states and concatenate the batch elements
 		# (a final state would've been the one after which simulation ended)
 		next_state = torch.FloatTensor(batch.next_state).to(device)
+		# Masks help keep array shape, even in case that we run over the boundary of array size
 		non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, next_state)))
 		non_final_next_states = torch.cat([s for s in next_state if s is not None])
 		state_batch = torch.FloatTensor(batch.state).to(device)
-        #0,1,2
+        # Actions from all elements of the batch - each one 0,1,2
 		action_batch = torch.LongTensor(batch.action).to(device)
-        #reward from action?
+        # Rewards from the actions corresponding to all elements of the batch
 		reward_batch = torch.FloatTensor(batch.reward).to(device)
 
 		# Compute Q(s_t, a) - the model computes Q(s_t), then we select the
@@ -71,6 +95,7 @@ class Agent:
 		# This is merged based on the mask, such that we'll have either the expected
 		# state value or 0 in case the state was final.
 		next_state_values = torch.zeros(self.batch_size, device=device)
+		# Fills in the predicted state values for each timestamp
 		next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 		# Compute the expected Q values
 		expected_state_action_values = (next_state_values * self.gamma) + reward_batch
@@ -78,9 +103,9 @@ class Agent:
 		# Compute Huber loss
 		loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
 
-		# Optimize the model
+		# Optimize the model - standard pytorch procedure
 		self.optimizer.zero_grad()
 		loss.backward()
 		for param in self.policy_net.parameters():
-				param.grad.data.clamp_(-1, 1)
+				param.grad.data.clamp_(-1, 1) # Keep gradient from going crazy
 		self.optimizer.step()
