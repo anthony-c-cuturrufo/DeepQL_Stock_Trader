@@ -44,7 +44,7 @@ def getSMAFromVec(v, window_size):
 
 # returns the sigmoid of a number x
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return 1 / (1 + np.exp(-1*x))
 
 def getState(data, t, n):
     '''
