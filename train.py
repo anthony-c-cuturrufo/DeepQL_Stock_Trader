@@ -1,71 +1,83 @@
 from agent.agent import Agent
 from envs import TradingEnv
 from functions import *
-import sys
 import torch
+import yaml, os
 
 
 #############################
 # Trains the model from CLI #
 #############################
 
+# PYTHONWARNINGS=ignore::yaml.YAMLLoadWarning
 
-profits_list = [] # Wild hold list of all profits as we go through training
+def train():
+    profits_list = [] # Will hold list of all profits as we go through training
 
-# Given command line input as below
+    # Given command line input as below
 
-if len(sys.argv) != 4:
-    print("Usage: python train.py [stock] [window] [episodes]")
-    exit()
+    # if len(sys.argv) != 4:
+    #     print("Usage: python train.py [stock] [window] [episodes]")
+    #     exit()
 
-# Unpackage data from terminal
-stock_name, window_size, episode_count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
-num_tech_indicators = 1 # Number of technical indicators we include in each state
-agent = Agent(window_size + num_tech_indicators)
-data = getStockDataVec(stock_name)
-env = TradingEnv(data, window_size)
-l = len(data) - 1
+    with open(os.path.join(os.path.dirname(__file__), 'config.yml'), 'r') as stream:
+        config = yaml.load(stream)
 
-for e in range(episode_count + 1):
-    print("Episode " + str(e) + "/" + str(episode_count))
-    state = env.get_state(0)
+    # Unpackage data from terminal/config
+    # stock_name, window_size, episode_count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+    stock_name, window_size, episode_count = config['stock_name'], config['window_size'], config["num_epochs"]
 
-    # We must manually add profit, as that is not taken into account anywhere else in our model
+    num_tech_indicators = config['num_tech_indicators']
+    agent = Agent(window_size + num_tech_indicators, config)
+    data = getStockDataVec(stock_name)
+    env = TradingEnv(data, window_size)
+    l = len(data) - 1
 
-    total_profit = 0
-    env.inventory = []
+    for e in range(episode_count + 1):
+        print("Episode " + str(e) + "/" + str(episode_count))
+        state = env.get_state(0)
 
-    for t in range(l):
-        action = agent.act(state)
+        env.reset_holdings()
 
-        # sit
-        next_state = env.get_state(t + 1)
-        reward = 0
+        for t in range(l):
+            action = agent.act(state)
 
-        if action == 1: # buy
-            #remembers the price bought at t, and the time bought 
-            env.buy(t)
-            # print("Buy: " + formatPrice(data[t]))
+            # sit
+            next_state = env.get_state(t + 1)
+            reward = 0
 
-        elif action == 2 and len(env.inventory) > 0: # sell
-            reward, profit = env.sell(t)
-            total_profit += profit
-            # print("Sell: " + formatPrice(data[t]) + " | Profit: " + formatPrice(profit))
+            if action == 1: # buy
+                #remembers the price bought at t, and the time bought
+                env.buy(t)
+                # print("Buy: " + formatPrice(data[t]))
 
-        done = True if t == l - 1 else False
-        # Push all values to memory
-        agent.memory.push(state, action, next_state, reward)
-        state = next_state
+            elif action == 2: # sell
+                reward, profit = env.sell(t)
+                # print("Sell: " + formatPrice(data[t]) + " | Profit: " + formatPrice(profit))
 
-        if done:
-            print("--------------------------------")
-            print("Total Profit: " + formatPrice(total_profit))
-            print("--------------------------------")
-            profits_list.append(total_profit)  
+            done = True if t == l - 1 else False
+            # Push all values to memory
+            agent.memory.push(state, action, next_state, reward)
+            state = next_state
+            total_profit = env.net_profit(t)
+            max_staked = env.max_spent
 
-        agent.optimize()
+            if done:
+                percent_return = total_profit / max_staked * 100
+                print("--------------------------------")
+                print("Total Profit: " + formatPrice(total_profit))
+                print("Max staked: " + formatPrice(max_staked))
+                print("Percent return: " + "{0:.2f}%".format(percent_return))
+                print("--------------------------------")
+                profits_list.append((total_profit, percent_return))
+                print(profits_list)
+            agent.optimize()
 
-    if e % 10 == 0:
-        agent.target_net.load_state_dict(agent.policy_net.state_dict())
-        torch.save(agent.policy_net, "models/policy_model")
-        torch.save(agent.target_net, "models/target_model")
+        if e % config['save_freq'] == 0:
+            agent.target_net.load_state_dict(agent.policy_net.state_dict())
+            torch.save(agent.policy_net, config['policy_model'])
+            torch.save(agent.target_net, config['target_model'])
+
+
+if __name__ == "__main__":
+    train()

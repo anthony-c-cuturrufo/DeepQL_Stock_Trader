@@ -22,8 +22,22 @@ class TradingEnv():
         self.window_size = window_size
         # Keeps track of buying prices
         self.inventory = []
+        # Keeps track of how much spent
+        self.max_spent = 0
+        self.current_out = 0  # currently held assets
+        self.buys = []
+        self.sells = []
+        self.total_profit = 0
         
     def get_reward(self, selling_price, time_sold, bought_price, time_bought):
+        """
+        Gets the reward of the given action
+        :param selling_price: price sold
+        :param time_sold: time sold
+        :param bought_price: buying price
+        :param time_bought: time bought
+        :return:
+        """
         delta_t = time_sold - time_bought
         profit = selling_price - bought_price
         reward = max(profit, .0001) // (np.log(delta_t) + 1)
@@ -49,15 +63,52 @@ class TradingEnv():
         res.append(sigmoid(self.get_weighted_diff(self.data[t], self.sma_data[t])))
         res = np.array([res])
         return res
+
+    def reset_holdings(self):
+        """
+        Resets the inventory and amount bought
+        """
+        self.inventory = []
+        self.current_out = 0
+        self.max_spent = 0
+        self.buys = []
+        self.sells = []
+        self.total_profit = 0
     
     def buy(self, t):
-        # keeps track of the price bought and time bought
-        self.inventory.append((self.data[t], t))
+        """
+        Buys stock at time t
+        :param t: time to buy
+        """
+        price = self.data[t]
+        self.inventory.append((price, t))
+        self.current_out += price
+        self.max_spent = max(self.max_spent, self.current_out)
+        self.buys.append(price)
     
     def sell(self, t):
-        #sells the oldest stock in portfolio
+        """
+        Sells the oldest stock in portfolio
+        :param t: time at which to sell
+        :return: reward and profit from selling
+        """
+        if len(self.inventory) < 1:
+            return 0, 0
         bought_price, time_bought = self.inventory.pop(0)
         selling_price = self.data[t] 
         reward = self.get_reward(selling_price, t, bought_price, time_bought)
         profit = selling_price - bought_price
+        self.total_profit += profit
+        self.current_out -= selling_price
+        self.sells.append(selling_price)
         return reward, profit
+
+    def net_profit(self, t):
+        """
+        Returns the total profit of the environment, which represents
+        the net profit made on each transaction plus the value of all
+        current assets at time t
+        :param t: current time (so as to determine market price of stock)
+        """
+        currently_held_value = len(self.inventory) * self.data[t]
+        return self.total_profit + currently_held_value
