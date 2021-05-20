@@ -60,7 +60,7 @@ class TradingEnv():
             res.append(sigmoid(block[i + 1] - block[i]))
 
         # add sigmoid of price and sma
-        res.append(sigmoid(self.get_weighted_diff(self.data[t], self.sma_data[t])))
+        # res.append(sigmoid(self.get_weighted_diff(self.data[t], self.sma_data[t])))
         res = np.array([res])
         return res
 
@@ -84,7 +84,7 @@ class TradingEnv():
         self.inventory.append((price, t))
         self.current_out += price
         self.max_spent = max(self.max_spent, self.current_out)
-        self.buys.append(price)
+        self.buys.append(t)
     
     def sell(self, t):
         """
@@ -100,8 +100,15 @@ class TradingEnv():
         profit = selling_price - bought_price
         self.total_profit += profit
         self.current_out -= selling_price
-        self.sells.append(selling_price)
+        self.sells.append(t)
         return reward, profit
+
+    def value_held(self, t):
+        """
+        Returns the total value of the portfolio at time t
+        :param t: time
+        """
+        return len(self.inventory) * self.data[t]
 
     def net_profit(self, t):
         """
@@ -110,5 +117,4 @@ class TradingEnv():
         current assets at time t
         :param t: current time (so as to determine market price of stock)
         """
-        currently_held_value = len(self.inventory) * self.data[t]
-        return self.total_profit + currently_held_value
+        return self.total_profit + self.value_held(t)

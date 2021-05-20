@@ -53,6 +53,7 @@ def train():
 
             elif action == 2: # sell
                 reward, profit = env.sell(t)
+                print(reward)
                 # print("Sell: " + formatPrice(data[t]) + " | Profit: " + formatPrice(profit))
 
             done = True if t == l - 1 else False
