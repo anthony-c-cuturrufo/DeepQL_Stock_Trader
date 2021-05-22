@@ -5,6 +5,6 @@
 3. Run ```python train.py``` to run model.
 4. Visualise in `visualize_progression_final.ipynb`.
 
-Slides can be found (here)[https://docs.google.com/presentation/d/1Q84t5eVPwABM1SjwKOw3sKBPMemFsgGI5FiwHCm1H68/edit?usp=sharing].
+Slides can be found [here](https://docs.google.com/presentation/d/1Q84t5eVPwABM1SjwKOw3sKBPMemFsgGI5FiwHCm1H68/edit?usp=sharing).
 Final write-up can be found (here)[https://docs.google.com/document/d/1LKwiiX6Rkt8dLHhYsvgPNYHCfy9ypaxsP5KRUGZoWzk/edit?usp=sharing].
 Video demo can be found (here)[www.google.com].
