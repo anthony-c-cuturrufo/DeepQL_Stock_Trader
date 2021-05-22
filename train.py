@@ -70,7 +70,7 @@ def train():
                 print("Percent return: " + "{0:.2f}%".format(percent_return))
                 print("--------------------------------")
                 profits_list.append((total_profit, percent_return))
-                print(profits_list)
+                # print(profits_list)
             agent.optimize()
 
         if e % config['save_freq'] == 0:
