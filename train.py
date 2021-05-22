@@ -53,7 +53,6 @@ def train():
 
             elif action == 2: # sell
                 reward, profit = env.sell(t)
-                print(reward)
                 # print("Sell: " + formatPrice(data[t]) + " | Profit: " + formatPrice(profit))
 
             done = True if t == l - 1 else False
@@ -71,7 +70,7 @@ def train():
                 print("Percent return: " + "{0:.2f}%".format(percent_return))
                 print("--------------------------------")
                 profits_list.append((total_profit, percent_return))
-                print(profits_list)
+                # print(profits_list)
             agent.optimize()
 
         if e % config['save_freq'] == 0:

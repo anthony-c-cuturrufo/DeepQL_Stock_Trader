@@ -1,7 +1,7 @@
 device: 'cpu'
 resume_checkpoint: 'None'
-target_model: 'models/target_model_4'
-policy_model: 'models/policy_model_4'
+target_model: 'models/target_model'
+policy_model: 'models/policy_model'
 #------------------------train params-----------------------
 learning_rate: 0.005  # for a RMS prop optimizer
 momentum: 0.9  # for RMS

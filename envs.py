@@ -28,7 +28,7 @@ class TradingEnv():
         self.buys = []
         self.sells = []
         self.total_profit = 0
-        
+
     def get_reward(self, selling_price, time_sold, bought_price, time_bought):
         """
         Gets the reward of the given action
@@ -40,12 +40,13 @@ class TradingEnv():
         """
         delta_t = time_sold - time_bought
         profit = selling_price - bought_price
-        reward = max(profit, .0001) // (np.log(delta_t) + 1)
-        return reward
-    
+        return max(profit, .0001)
+        # reward = max(profit, .0001) // (np.log(delta_t) + 1)
+        # return reward
+
     def get_weighted_diff(self, v1, v2):
         return (abs(v2 - v1)) / v1
-        
+
     def get_state(self, t):
         '''
         Our state representation.
@@ -74,7 +75,7 @@ class TradingEnv():
         self.buys = []
         self.sells = []
         self.total_profit = 0
-    
+
     def buy(self, t):
         """
         Buys stock at time t
@@ -85,7 +86,7 @@ class TradingEnv():
         self.current_out += price
         self.max_spent = max(self.max_spent, self.current_out)
         self.buys.append(t)
-    
+
     def sell(self, t):
         """
         Sells the oldest stock in portfolio
@@ -95,7 +96,7 @@ class TradingEnv():
         if len(self.inventory) < 1:
             return 0, 0
         bought_price, time_bought = self.inventory.pop(0)
-        selling_price = self.data[t] 
+        selling_price = self.data[t]
         reward = self.get_reward(selling_price, t, bought_price, time_bought)
         profit = selling_price - bought_price
         self.total_profit += profit
