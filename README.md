@@ -12,4 +12,4 @@ Slides can be found [here](https://docs.google.com/presentation/d/1Q84t5eVPwABM1
 
 Final write-up can be found [here](https://docs.google.com/document/d/1LKwiiX6Rkt8dLHhYsvgPNYHCfy9ypaxsP5KRUGZoWzk/edit?usp=sharing).
 
-Video demo can be found [here](www.google.com).
+Video demo can be found [here](https://youtu.be/WGrcPwOmUfI).
